@@ -1,0 +1,5 @@
+
+= 2002/11/18 0.3
+
+Just fixed the use vars qw($VERSION) line.
+

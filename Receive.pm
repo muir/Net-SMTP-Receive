@@ -7,7 +7,7 @@
 package Net::SMTP::Receive;
 
 use vars qw($VERSION);
-$VERSION = 0.3;
+$VERSION = 0.301;
 
 use strict;
 use Socket;
@@ -95,7 +95,7 @@ sub check_rcptto { 0; }
 
 sub port { 'smtp(25)'; }
 
-sub ipaddr { INADDR_ANY; }
+sub ipaddr { undef; } # INADDR_ANY
 
 sub max_datalength { 20_000_000; }
 
@@ -239,7 +239,7 @@ sub mainloop
 			$server->talk($client);
 
 			again();
-			exit(0);
+			return;
 		}
 
 		my $pid;
@@ -461,7 +461,7 @@ sub data
 		? "354 Send $server->{MIMETYPE} message, ending in CLRF.CLRF\r\n"
 		: qq'354 Enter mail, end with "." on a line by itself\r\n';
 
-	my $eight = "\U$server->{MIMETYPE}" eq '8BITMIME';
+	my $eight = $server->{MIMETYPE} && "\U$server->{MIMETYPE}" eq '8BITMIME';
 	my $p = 0;
 	my $len;
 	my @msg;
@@ -714,7 +714,7 @@ sub reset
 	$server->{'STATE'} = 'MAIL';
 	undef $server->{'FROM'};
 	$server->{'TO'} = [];
-	undef $server->{'MIMETYPE'};
+	$server->{'MIMETYPE'} = '';
 	undef $server->{'HELO'};
 	undef $server->{'TIME'};
 	undef $server->{'ID'};

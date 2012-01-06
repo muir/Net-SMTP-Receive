@@ -56,10 +56,23 @@ Both the SMTP server and individual messages are represented
 by Net::SMTP::Receive objects (or rather MyMailReceiver
 objects if that's what you choose to name your subclass).
 
+This module defines the pieces you need for a basic mail server
+but it since some of the bits must be overriden, it does not 
+define a complete mail server.  A complete mail server, 
+listens for connections, queues mail, re-runs the queue every
+now and then, and can display the queue.  A call to
+C<serer()> will listen for conenctions.   It blocks forever.
+A call to C<runqueue()> will process the pending queue.  Arrange
+to call this periodically.   A call to C<showqueue()> will 
+display the queue: provide a command to for users to do this.
+This is not meant as a high-volume mail server.  It is mean to
+provide a way to directly receive mail in perl while honoring
+the guarantees that mail servers should make.
+
 =head1 MEMBER DATA
 
 The following fields exist the sever objects and continue
-to exist as the server object forks itself into
+to exist as the server object forks itself to become
 a message object.
 
 =over 4
@@ -131,6 +144,24 @@ internal use.  Any additional fields added after this release
 will use a member data naming prefix of C<NSR_>.
 
 =back
+
+=head1 REQUIRED METHODS TO OVERRIDE
+
+You must override C<deliver> and C<is_delivered>.  In the 
+context of method delivery, C<$message> is a persistent object.
+You can add or change fields and unless the message is fully
+delivered, your changes stored with Storable and restored the
+next time delivery() is attempted.
+
+See the L</"MEMBER DATA"> section for the pre-defined keys that
+the message object provides.
+
+For C<is_delivered> the recipient optional. If present, the return
+value is used for for C<showqueue>.
+
+For C<deliver>, it is okay to C<die>.  If you do, the die message
+will become the C<ERROR> field and be displayed by C<showqueue>.
+Delivery will be re-attempted by C<runqueue>.
 
 =head1 ADDITIONAL METHODS TO OVERRIDE
 
@@ -212,8 +243,22 @@ C<check_mailfrom> is less important, but can also be useful.
 		return 0; #default
 		return 1 
 		# if you want to add an C<X-Envelope-To:> header.
-		# If you do this, then C<Bcc:> won't be blind.
+		# If you do this, C<Bcc:> won't be blind.
 	}
+
+	sub predeliver
+	{
+		my ($msg, $client, $msgref) = @_;
+		# check over the incoming message before it is enqueued
+		# this is a good place to enforce policy or do quick
+		# spam checks.  Die with an SMTP error code to reject
+		# the message --- die "500 relaying denied"
+		# The $msgref is an anonymous list comprising the body
+		# of the message.
+		die "500 relaying denied" if $msgref->[0] !~ /\@myhost/;
+		return 0
+	}
+
 
 =head1 METHODS TO CALL
 

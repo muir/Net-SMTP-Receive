@@ -14,9 +14,19 @@ WriteMakefile(
 		'Storable' => 0.611,
 		'File::Sync' => 0.09,
 	},
-	($] >= 5.005 ?
-	    ('ABSTRACT' => 'Read rdist distfiles, emulate using rsync',
-	     'AUTHOR'	=> 'David Muir Sharnoff <muir@idiom.org>') : ()),
+	($] >= 5.005 
+		?	
+			(
+				ABSTRACT	=> 'Receive mail via SMTP',
+				AUTHOR		=> 'David Muir Sharnoff <cpan@dave.sharnoff.org>',
+				META_MERGE     => {
+					resources  => {
+						repository => 'http://github.com/muir/Net-SMTP-Receive',
+					},
+				},
+			) 
+		: ()
+	),
 	'dist'   => {COMPRESS=>'gzip', SUFFIX=>'gz'}
 );
 
